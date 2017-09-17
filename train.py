@@ -74,6 +74,8 @@ def train(args):
         logging.info('Loading model from {}\n'.format(args.load))
         model = torch.load(os.path.join(EXP_DIR, args.load, 'model.ckpt'))
     if torch.cuda.is_available():
+        training_set.cuda()
+        validation_set.cuda()
         model.cuda()
     logging.info(model)
     logging.info('Training loss: {}\n'.format(experiment_config.loss_fn))

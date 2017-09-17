@@ -268,6 +268,15 @@ class GraphDataset2(Dataset):
             self.dads_np = build_complete_dads(self.length, self.order)
         self.dads = None
 
+    def cuda(self):
+        try:
+            assert self.vertices is not None
+            self.vertices = self.vertices.cuda()
+            self.targets = self.targets.cuda()
+            self.dads = self.dads.cuda()
+        except AssertionError:
+            raise Error("Data was not initialized. Cannot move to CUDA")
+            
     def __len__(self):
         return self.length
 
