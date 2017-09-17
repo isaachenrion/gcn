@@ -12,6 +12,25 @@ Target = namedtuple(
     ]
 )
 
+
+def dad_from_A_tilde(A_tilde):
+    D_tilde = np.sum(A_tilde, -1, keepdims=True)
+    D_tilde_inv_sqrt = np.power(D_tilde, -0.5)
+    dad = D_tilde_inv_sqrt * A_tilde * D_tilde_inv_sqrt
+    return dad
+
+def build_complete_dads(n, order):
+    A_tilde = np.ones((order, order))
+    dad = dad_from_A_tilde(A_tilde)
+    return np.tile(dad, (n, 1, 1))
+
+def build_dads(edges):
+    n, order, _ = edges.shape
+    A_tilde = edges + np.identity(order)
+    dad = dad_from_A_tilde(A_tilde)
+    return dad
+
+
 def wrap_vertices(G, dtype='float'):
     for u in G.nodes():
         G.node[u]['data'] = wrap_tensor(G.node[u]['data'], dtype)
@@ -62,6 +81,8 @@ def add_graph_data(G, graph_data, key='data'):
 def add_graph_data_dict(G, graph_data_dict):
     for k, v in graph_data_dict.items():
         add_graph_data(G, v, k)
+
+
 
 def fully_connected_padding(G):
     '''Given a graph G with edge data, make it fully connected

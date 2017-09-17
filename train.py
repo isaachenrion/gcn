@@ -61,7 +61,7 @@ def train(args):
     # load data
     training_set, validation_set = load_data(args)
     logging.info('Loaded data: {} training examples, {} validation examples\n'.format(
-        len(training_set.graphs), len(validation_set.graphs)))
+        len(training_set), len(validation_set)))
 
     # get config
     experiment_config = get_experiment_config(args, training_set)
@@ -100,7 +100,7 @@ def train(args):
             torch.save(model, os.path.join(model_dir, 'model.ckpt'))
             logging.info("Saved model to {}\n".format(os.path.join(model_dir, 'model.ckpt')))
 
-            logging.info("Training: processed {:.1f} graphs per second".format(len(training_set.graphs) / train_results['time']))
+            logging.info("Training: processed {:.1f} graphs per second".format(len(training_set) / train_results['time']))
 
             with Capturing() as output:
                 scheduler.step(results['loss'])

@@ -11,7 +11,7 @@ FlatConfig = namedtuple(
 
 def get_flat_config(args, dataset):
     config = FlatConfig(
-        state_dim=(dataset.vertex_dim * dataset.order),
+        state_dim=(dataset.vertex_dim * dataset.order + dataset.order * dataset.order),
         hidden_dim=args.hidden_dim,
         target_names=dataset.target_names,
         mode=dataset.problem_type

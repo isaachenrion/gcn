@@ -249,61 +249,41 @@ class BatchedFixedOrderGraphDataset(BatchedGraphDataset):
 
 
 class GraphDataset2(Dataset):
-    def __init__(self, graphs, targets, problem_type, target_names, adjacency_matrices):
+    def __init__(self, vertices, edges, targets, problem_type, target_names):
         super().__init__()
-        self.graphs_np = graphs
+        self.vertices_np = vertices
         self.targets_np = targets
-        self.graphs = None
+        self.vertices = None
         self.targets = None
-        self.length, self.order, self.vertex_dim = graphs.shape
+        self.length, self.order, self.vertex_dim = vertices.shape
         _, self.target_dim = targets.shape
 
         self.problem_type = problem_type
         self.target_names = target_names
         self.batch_size = None
 
-        if adjacency_matrices is not None:
-            self.dads_np = self.build_dads(adjacency_matrices)
+        if edges is not None:
+            self.dads_np = build_dads(edges)
         else:
-            self.dads_np = self.build_complete_dads(self.length, self.order)
+            self.dads_np = build_complete_dads(self.length, self.order)
         self.dads = None
-
-    @staticmethod
-    def dad(A_tilde):
-        D_tilde = np.sum(A_tilde, -1, keepdims=True)
-        D_tilde_inv_sqrt = np.power(D_tilde, -0.5)
-        dad = D_tilde_inv_sqrt * A_tilde * D_tilde_inv_sqrt
-        return dad
-
-    @staticmethod
-    def build_complete_dads(n, order):
-        A_tilde = np.ones((order, order))
-        dad = self.dad(A_tilde)
-        return np.tile(dad, (n, 1, 1))
-
-    @staticmethod
-    def build_dads(adjacency_matrices):
-        n, order, _ = adjacency_matrices.shape
-        A_tilde = adjacency_matrices + np.identity(order)
-        dad = self.dad(A_tilde)
-        return dad
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, index):
-        return (self.graphs[index], self.targets[index], self.dads[index])
+        return (self.vertices[index], self.targets[index], self.dads[index])
 
     def initialize(self, batch_size):
         n_batches, remainder = np.divmod(self.length, batch_size)
         n_batches = int(n_batches)
         remainder = int(remainder)
         self.batch_size = batch_size
-        self.graphs = torch.from_numpy(self.graphs_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.vertex_dim)
+        self.vertices = torch.from_numpy(self.vertices_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.vertex_dim)
         self.targets = torch.from_numpy(self.targets_np)[:-remainder].contiguous().view(n_batches, batch_size, self.target_dim)
         self.dads = torch.from_numpy(self.dads_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.order)
 
-        self.graphs = Variable(self.graphs).float()
+        self.vertices = Variable(self.vertices).float()
         self.targets = Variable(self.targets).float()
         self.dads = Variable(self.dads).float()
         #import ipdb; ipdb.set_trace()

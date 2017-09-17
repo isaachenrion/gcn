@@ -20,8 +20,8 @@ class Flat(nn.Module):
         self.fc4 = nn.Linear(self.hidden_dim, self.readout_dim)
         self.activation = nn.ReLU()
 
-    def forward(self, vertices):
-        x = vertices.view(vertices.shape[0], -1)
+    def forward(self, vertices, dads):
+        x = torch.cat((vertices.view(vertices.size()[0], -1), dads.view(dads.size()[0], -1)), 1)
         x = self.fc1(x)
         x = self.activation(x)
         x = self.bn1(x)

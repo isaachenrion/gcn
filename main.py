@@ -59,7 +59,6 @@ if args.debug:
     args.batch_size = 23
 
 PROBLEMS = [
-    'qm7_ng',
     'qm7_edge_representation',
     'qm7_edge_representation_small',
     'qm7_vertex_representation',

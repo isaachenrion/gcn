@@ -8,7 +8,6 @@ from .is_connected import *
 from .simple import *
 from .qm7 import *
 from .qm7b import *
-from .qm7_ng import *
 from .graph_mnist import MNISTinFour
 
 def generate_data(prefix, args):
@@ -23,8 +22,6 @@ def generate_data(prefix, args):
         data = is_connected(prefix, num_examples, args)
     elif args.problem == 'qm7_edge_representation':
         data = qm7(prefix, 'edge')
-    elif args.problem == 'qm7_ng':
-        data = qm7_ng(prefix, 'edge')
     elif args.problem == 'qm7_edge_representation_small':
         data = qm7_small(prefix, 'edge')
     elif args.problem == 'qm7_vertex_representation':
