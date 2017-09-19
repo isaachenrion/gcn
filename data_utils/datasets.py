@@ -256,7 +256,10 @@ class GraphDataset2(Dataset):
         self.vertices = None
         self.targets = None
         self.length, self.order, self.vertex_dim = vertices.shape
-        _, self.target_dim = targets.shape
+        if problem_type == 'reg':
+            _, self.target_dim = targets.shape
+        elif problem_type == 'clf':
+            self.target_dim = target_names[0].dim
 
         self.problem_type = problem_type
         self.target_names = target_names
@@ -276,7 +279,7 @@ class GraphDataset2(Dataset):
             self.dads = self.dads.cuda()
         except AssertionError:
             raise Error("Data was not initialized. Cannot move to CUDA")
-            
+
     def __len__(self):
         return self.length
 
@@ -287,12 +290,26 @@ class GraphDataset2(Dataset):
         n_batches, remainder = np.divmod(self.length, batch_size)
         n_batches = int(n_batches)
         remainder = int(remainder)
+        self.n_batches = n_batches
         self.batch_size = batch_size
-        self.vertices = torch.from_numpy(self.vertices_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.vertex_dim)
-        self.targets = torch.from_numpy(self.targets_np)[:-remainder].contiguous().view(n_batches, batch_size, self.target_dim)
-        self.dads = torch.from_numpy(self.dads_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.order)
+        if remainder != 0:
+            self.vertices = torch.from_numpy(self.vertices_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.vertex_dim)
+            if self.problem_type == 'reg':
+                self.targets = torch.from_numpy(self.targets_np)[:-remainder].contiguous().view(n_batches, batch_size, self.target_dim)
+            elif self.problem_type == 'clf':
+                self.targets = torch.from_numpy(self.targets_np)[:-remainder].contiguous().view(n_batches, batch_size)
+            self.dads = torch.from_numpy(self.dads_np)[:-remainder].contiguous().view(n_batches, batch_size, self.order, self.order)
+        else:
+            self.vertices = torch.from_numpy(self.vertices_np).contiguous().view(n_batches, batch_size, self.order, self.vertex_dim)
+            if self.problem_type == 'reg':
+                self.targets = torch.from_numpy(self.targets_np).contiguous().view(n_batches, batch_size, self.target_dim)
+            elif self.problem_type == 'clf':
+                self.targets = torch.from_numpy(self.targets_np).contiguous().view(n_batches, batch_size)
+            self.dads = torch.from_numpy(self.dads_np).contiguous().view(n_batches, batch_size, self.order, self.order)
 
         self.vertices = Variable(self.vertices).float()
         self.targets = Variable(self.targets).float()
+        if self.problem_type == 'clf':
+            self.targets = self.targets.long()
         self.dads = Variable(self.dads).float()
         #import ipdb; ipdb.set_trace()

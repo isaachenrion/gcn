@@ -48,7 +48,6 @@ class NoInputGRUCell(nn.Module):
         self.linear = nn.Linear(hidden_dim, 3 * hidden_dim)
 
     def forward(self, h):
-        #import ipdb; ipdb.set_trace()
         r_, z_, n_ = self.linear(h).chunk(3, 1)
         r = F.sigmoid(r_)
         z = F.sigmoid(z_)

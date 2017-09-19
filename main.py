@@ -9,8 +9,8 @@ import logging
 parser = argparse.ArgumentParser(description='MPNN')
 
 # data args
-parser.add_argument('--n_train', type=int, default=100, help='Number of training examples to generate.')
-parser.add_argument('--n_eval', type=int, default=100, help='Number of test examples to generate.')
+parser.add_argument('--n_train', type=int, default=10000, help='Number of training examples to generate.')
+parser.add_argument('--n_eval', type=int, default=2000, help='Number of test examples to generate.')
 parser.add_argument('--problem', '-t', type=int, default=0, help='task to train on')
 parser.add_argument('--gen', action='store_true', help='generate the data')
 parser.add_argument('--max_order', type=int, default=10, help='order of graphs to generate')
@@ -21,7 +21,7 @@ parser.add_argument('--verbosity', '-v', type=int, default=1)
 parser.add_argument('--debug', action='store_true')
 
 # training args
-parser.add_argument('--epochs', '-e', type=int, default=100, help='number of epochs to train')
+parser.add_argument('--epochs', '-e', type=int, default=500, help='number of epochs to train')
 parser.add_argument('--batch_size', '-b', type=int, default=100, help='batch size for training')
 parser.add_argument('--randomize_nodes', '-r', action='store_true', help='Randomize the ordering of the nodes')
 parser.add_argument('--lr', type=float, default=0.0005, help='Learning rate')
@@ -75,34 +75,19 @@ PROBLEMS = [
 args.problem = PROBLEMS[args.problem]
 
 MODELS = [
-'mpnn', 'flat', 'vcn', 'mpnn_set', 'dtnn', 'gcn'
+'flat', 'gcn1', 'gcn2'
 ]
 args.model = MODELS[args.model]
-if args.model == 'vcn':
-    args.readout = 'vcn'
-    args.message = 'fully_connected'
-    args.vertex_update = 'gru'
-    args.embedding = 'constant'
-elif args.model == 'mpnn':
+if args.model == 'gcn1':
     args.readout = 'fully_connected'
-    args.message = 'constant' # 'fully_connected'
-    args.vertex_update = 'gru'
-    args.embedding = 'constant'
-elif args.model == 'gcn':
-    args.readout = 'set'
     args.message = 'dtnn' # 'fully_connected'
     args.vertex_update = 'gru'
     args.embedding = 'fully_connected'
-elif args.model == 'mpnn_set':
-    args.readout = 'set'
-    args.message = 'constant' # 'fully_connected'
-    args.vertex_update = 'gru'
-    args.embedding = 'constant'
-elif args.model == 'dtnn':
-    args.readout = 'dtnn'
+elif args.model == 'gcn2':
+    args.readout = 'fully_connected'
     args.message = 'dtnn' # 'fully_connected'
     args.vertex_update = 'gru'
-    args.embedding = 'constant'
+    args.embedding = 'fully_connected'
 elif args.model == 'flat':
     args.readout = None
     args.message = None

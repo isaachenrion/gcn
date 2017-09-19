@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
-from ..set2set import Set2Vec
+from .set2set import Set2Vec
 
 class Readout(nn.Module):
     def __init__(self, config):
@@ -33,11 +33,6 @@ class DTNNReadout(Readout):
     def forward(self, h):
         x = self.net(h).sum(1)
         return x
-        #if self.classify:
-        #    return {target.name: x for i, target in enumerate(self.target_names)}
-        #else:
-        #    return {target.name: x[:, i] for i, target in enumerate(self.target_names)}
-
 
 class FullyConnectedReadout(Readout):
     def __init__(self, config):
@@ -52,13 +47,9 @@ class FullyConnectedReadout(Readout):
         self.net = net
 
     def forward(self, h):
-        x = torch.mean(h, 2)
+        x = torch.mean(h, 1)
         x = self.net(x)
-        if self.classify:
-            return {target.name: x for i, target in enumerate(self.target_names)}
-        else:
-            return {target.name: x[:, i] for i, target in enumerate(self.target_names)}
-
+        return x
 
 class SetReadout(Readout):
     def __init__(self, config):
@@ -68,11 +59,6 @@ class SetReadout(Readout):
     def forward(self, h):
         x = self.set2vec(h)
         return x
-        #if self.classify:
-        #    return {target.name: x for i, target in enumerate(self.target_names)}
-        #else:
-        #    return {target.name: x[:, i] for i, target in enumerate(self.target_names)}
-
 
 
 class VCNReadout(Readout):

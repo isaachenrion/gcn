@@ -15,7 +15,7 @@ class Message(nn.Module):
         self.message_dim = config.message_dim
 
     def forward(self, *args):
-        if self.config.edge_dim == 0:
+        if self.edge_dim == 0:
             return self._forward_without_edge(*args)
         else:
             return self._forward_with_edge(*args)
@@ -32,7 +32,7 @@ class DTNNMessage(Message):
         self.vertex_wx_plus_b = nn.Linear(self.vertex_dim, self.message_dim)
         if self.edge_dim > 0:
             self.edge_wx_plus_b = nn.Linear(self.edge_dim, self.message_dim)
-        self.combo_wx = nn.Linear(self.message_dim, self.message_dim, bias=False)
+            self.combo_wx = nn.Linear(self.message_dim, self.message_dim, bias=False)
 
     def _forward_with_edge(self, vertices, edges):
         message = F.tanh(self.combo_wx(self.vertex_wx_plus_b(vertices) * self.edge_wx_plus_b(edges)))

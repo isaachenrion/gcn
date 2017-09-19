@@ -20,43 +20,29 @@ class GraphLoss(Loss):
     def forward(self, model_output, targets):
         loss_dict = {}
 
+        #import ipdb; ipdb.set_trace()
+        per_target_loss = self.loss_fn(model_output, targets)
+
         if self.target_names is not None:
-            for target in self.target_names:
-                loss_dict[target.name + ' ' + self.name] = self.loss_fn(model_output, targets)
+            for i, target in enumerate(self.target_names):
+                loss_dict[target.name + ' ' + self.name] = per_target_loss[i]
 
         if self.as_dict:
             return loss_dict
         else:
-            total_loss = 0.
-            for target in self.target_names:
-                total_loss += loss_dict[target.name + ' ' + self.name]
-            return total_loss
-
-    def _forward(self, model_output, G):
-        loss_dict = {}
-
-        if self.target_names is not None:
-            for target in self.target_names:
-                loss_dict[target.name + ' ' + self.name] = self.loss_fn(model_output[target.name], G.graph[target.name])
-
-        if self.as_dict:
-            return loss_dict
-        else:
-            total_loss = 0.
-            for target in self.target_names:
-                total_loss += loss_dict[target.name + ' ' + self.name]
+            total_loss = sum(v for v in loss_dict.values())
             return total_loss
 
 class MSEGraphLoss(GraphLoss):
     def __init__(self, **kwargs):
         def mse(y, y_target):
-            return torch.mean(torch.pow(y - y_target.squeeze(), 2))
+            return torch.mean(torch.pow(y - y_target, 2), 0)
         super().__init__(loss_fn=mse, name='MSE', **kwargs)
 
 class MAEGraphLoss(GraphLoss):
     def __init__(self, **kwargs):
         def mae(y, y_target):
-            return torch.mean(torch.abs(y - y_target.squeeze()))
+            return torch.mean(torch.abs(y - y_target), 0)
         super().__init__(loss_fn=mae, name='MAE', **kwargs)
 
 class BCEGraphLoss(GraphLoss):

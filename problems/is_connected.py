@@ -25,9 +25,9 @@ def is_connected(prefix='train', num_examples=1, args=None):
         p = (1 + eps) * np.log(order) / order
         G= nx.fast_gnp_random_graph(order, p)
 
-        targets.append(np.ones([1]) if nx.is_connected(G) else np.zeros([1]))
+        targets.append(1 if nx.is_connected(G) else 0)
         edges.append(nx.to_numpy_matrix(G))
-        vertices.append(np.ones(order, 1))
+        vertices.append(np.ones((order, 1)))
 
     targets = np.array(targets)
     edges = np.array(edges)

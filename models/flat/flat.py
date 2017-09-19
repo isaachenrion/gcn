@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from collections import namedtuple
+from torch.autograd import Variable
 
 
 class Flat(nn.Module):
@@ -20,6 +20,10 @@ class Flat(nn.Module):
         self.fc4 = nn.Linear(self.hidden_dim, self.readout_dim)
         self.activation = nn.ReLU()
 
+        self.target_mean = torch.zeros(1, self.readout_dim)
+        self.target_var = torch.zeros(1, self.readout_dim)
+        self.alpha = 0.999
+
     def forward(self, vertices, dads):
         x = torch.cat((vertices.view(vertices.size()[0], -1), dads.view(dads.size()[0], -1)), 1)
         x = self.fc1(x)
@@ -33,7 +37,18 @@ class Flat(nn.Module):
 
         if self.mode == 'clf':
             x = F.sigmoid(x)
+        #elif self.mode == 'reg':
+        #    x = x * Variable(self.target_var) + Variable(self.target_mean)
         return x
+
+    def record(self, targets):
+        mean = torch.mean(targets.data, 0, keepdim=True)
+        var = torch.var(targets.data, 0, keepdim=True)
+
+        self.target_mean = self.alpha * self.target_mean + (1 - self.alpha) * mean
+        self.target_var = self.alpha * self.target_var + (1 - self.alpha) * var
+
+
 
 def make_flat(config):
     return Flat(config)

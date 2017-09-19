@@ -64,7 +64,7 @@ def train(args):
         len(training_set), len(validation_set)))
 
     # get config
-    experiment_config = get_experiment_config(args, training_set)
+    experiment_config = get_experiment_config(args, training_set, validation_set)
 
     # initialize model
     if args.load is None:
@@ -157,7 +157,6 @@ def train_one_batch_parallel(model, batch, loss_fn, optimizer, monitors):
     optimizer.zero_grad()
 
     x, y, dads = batch
-    #import ipdb; ipdb.set_trace()
 
     # forward model
     model_output = model(x, dads)
@@ -167,39 +166,11 @@ def train_one_batch_parallel(model, batch, loss_fn, optimizer, monitors):
 
     # backward and optimize
     batch_loss.backward()
-
-    #torch.nn.utils.clip_grad_norm(model.parameters(), .1)
     optimizer.step()
+    #model.record(y)
 
     # get stats
     batch_stats = unwrap(monitors(model_output, y))
-
-    return batch_stats
-
-
-def _train_one_batch_parallel(model, batch, loss_fn, optimizer, monitors):
-
-    optimizer.zero_grad()
-
-    # forward model
-    model_output = model(batch)
-
-    # get loss
-    batch_loss = loss_fn(model_output, batch)
-
-    # backward and optimize
-    batch_loss.backward()
-
-    if False and DEBUG:
-        for k, v in model_output.items():
-            print("Output variance: {}".format(v.var(0).data.numpy()[0]))
-            print("Target variance: {}".format(batch.graph[k].var(0).data.numpy()[0]))
-
-    #torch.nn.utils.clip_grad_norm(model.parameters(), .1)
-    optimizer.step()
-
-    # get stats
-    batch_stats = unwrap(monitors(model_output, batch))
 
     return batch_stats
 
@@ -217,7 +188,7 @@ def train_one_epoch(model, dataset, loss_fn, optimizer, monitors, debug):
         batch_stats = train_one_batch(model, batch, loss_fn, optimizer, monitors)
         epoch_stats = {name: (epoch_stats[name] + batch_stats[name]) for name in monitors.names}
 
-    epoch_stats = {name: stat / len(dataset) for name, stat in epoch_stats.items()}
+    epoch_stats = {name: stat / dataset.n_batches for name, stat in epoch_stats.items()}
     epoch_stats["time"] = time.time() - t0
 
     gc.collect()
@@ -275,7 +246,7 @@ def evaluate_one_epoch(model, dataset, loss_fn, monitors):
             batch_stats = evaluate_one_batch_parallel(model, batch, monitors)
         epoch_stats = {name: (epoch_stats[name] + batch_stats[name]) for name in monitors.names}
 
-    epoch_stats = {name: stat / len(dataset) for name, stat in epoch_stats.items()}
+    epoch_stats = {name: stat / dataset.n_batches for name, stat in epoch_stats.items()}
     epoch_stats["time"] = time.time() - t0
 
     return epoch_stats

@@ -2,6 +2,7 @@ from .mpnn_config import *
 
 GCNConfig = namedtuple(
         'GCNConfig', [
+            'gcn_type',
             'message',
             'vertex_update',
             'readout',
@@ -13,9 +14,8 @@ GCNConfig = namedtuple(
 )
 
 def get_gcn_config(args, dataset):
-    #if args.message == 'constant':
-    #    args.message_dim = args.hidden_dim + dataset.edge_dim
     config = GCNConfig(
+        gcn_type=args.model,
         message=FunctionAndConfig(
             function=args.message,
             config=MessageConfig(

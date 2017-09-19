@@ -8,6 +8,9 @@ def qm7(prefix, representation='edge', N=-1):
 
     data = scipy.io.loadmat(os.path.join(DATA_DIR, "qm7.mat"))
     targets = np.expand_dims(data['T'][0], -1)
+    #targets = targets - np.mean(targets, 0, keepdims=True)
+    #targets = targets / np.std(targets, 0, keepdims=True)
+
 
     # standardize
     #edge_data = np.expand_dims(data['X'], -1)
