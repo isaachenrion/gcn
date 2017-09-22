@@ -24,6 +24,7 @@ class ImputationDataset(VertexPredictionDataset):
         #mask[:, 0, 0] = 0
         #mask = Variable(torch.zeros((self.batch_size, self.order, 1)))
         mask = Variable(torch.bernoulli((1-self.missing_prob) * torch.ones(self.batch_size, self.order, 1)))
+        if torch.cuda.is_available(): mask = mask.cuda()
         return mask
 
     def __getitem__(self, index):
