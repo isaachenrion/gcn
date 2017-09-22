@@ -13,6 +13,7 @@ class GCN1(BaseMPNN):
 
     def forward(self, vertices, dads):
         h = Variable(torch.zeros(vertices.size()[0], vertices.size()[1], self.config.message.config.hidden_dim))
+        if torch.cuda.is_available(): h = h.cuda()
         s = self.embedding(vertices) # vertex states
         for i in range(self.n_iters):
             h = self.message_passing(h, s, dads)
