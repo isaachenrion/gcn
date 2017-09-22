@@ -49,14 +49,6 @@ EmbeddingConfig = namedtuple(
         ]
 )
 
-ReadoutConfig = namedtuple(
-        'ReadoutConfig', [
-            'hidden_dim',
-            'readout_hidden_dim',
-            'mode',
-            'target_names',
-        ]
-)
 
 def get_mpnn_config(args, dataset):
     if args.message == 'constant':
@@ -85,7 +77,7 @@ def get_mpnn_config(args, dataset):
                 hidden_dim=args.hidden_dim,
                 readout_hidden_dim=10,
                 mode=dataset.problem_type,
-                target_names=dataset.target_names,
+                target_dim=dataset.target_dim,
             )
         ),
         embedding=FunctionAndConfig(

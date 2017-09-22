@@ -8,7 +8,7 @@ from .is_connected import *
 from .simple import *
 from .qm7 import *
 from .qm7b import *
-from .graph_mnist import MNISTinFour
+#from .graph_mnist import MNISTinFour
 
 def generate_data(prefix, args):
     if prefix == 'train':

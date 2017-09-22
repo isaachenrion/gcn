@@ -52,14 +52,24 @@ def train(args):
         root.addHandler(ch)
 
     # set device (if using CUDA)
+    seed = 12345
     if torch.cuda.is_available():
         torch.cuda.device(args.gpu)
-
+        torch.cuda.manual_seed(seed)
+    else:
+        torch.manual_seed(seed)
     # write the args to outfile
     for k, v in sorted(vars(args).items()): logging.info('{} : {}\n'.format(k, v))
 
     # load data
     training_set, validation_set = load_data(args)
+
+    #means = np.mean(np.mean(training_set.vertices_np, 0)[:, :-1], 1)
+    #variances = np.var(training_set.vertices_np[:, :, :4], axis=(0, 2))
+    #for mean in means:
+    #    print(mean)
+    #for variance in variances:
+    #    print(variance)
     logging.info('Loaded data: {} training examples, {} validation examples\n'.format(
         len(training_set), len(validation_set)))
 
@@ -157,6 +167,8 @@ def train_one_batch_parallel(model, batch, loss_fn, optimizer, monitors):
     optimizer.zero_grad()
 
     x, y, dads = batch
+    #
+    #import ipdb; ipdb.set_trace()
 
     # forward model
     model_output = model(x, dads)
@@ -184,6 +196,8 @@ def train_one_epoch(model, dataset, loss_fn, optimizer, monitors, debug):
         train_one_batch = train_one_batch_parallel
 
     model.train()
+
+    #import ipdb; ipdb.set_trace()
     for i, batch in enumerate(dataset):
         batch_stats = train_one_batch(model, batch, loss_fn, optimizer, monitors)
         epoch_stats = {name: (epoch_stats[name] + batch_stats[name]) for name in monitors.names}

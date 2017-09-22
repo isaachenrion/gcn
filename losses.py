@@ -22,6 +22,8 @@ class GraphLoss(Loss):
 
         #import ipdb; ipdb.set_trace()
         per_target_loss = self.loss_fn(model_output, targets)
+        if len(per_target_loss.size()) == 2:
+            per_target_loss = per_target_loss.sum(1)
 
         if self.target_names is not None:
             for i, target in enumerate(self.target_names):

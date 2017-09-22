@@ -14,7 +14,8 @@ parser.add_argument('--n_eval', type=int, default=2000, help='Number of test exa
 parser.add_argument('--problem', '-t', type=int, default=0, help='task to train on')
 parser.add_argument('--gen', action='store_true', help='generate the data')
 parser.add_argument('--max_order', type=int, default=10, help='order of graphs to generate')
-
+parser.add_argument('--missing_prob', type=float, default=0., help='vertex dropout probability (for imputation)')
+parser.add_argument('--imp', action='store_true', help='is this an imputation problem?')
 # miscellaneous args
 parser.add_argument('--gpu', type=int, default=0, help='Device to use (GPU)')
 parser.add_argument('--verbosity', '-v', type=int, default=1)
@@ -79,12 +80,10 @@ MODELS = [
 ]
 args.model = MODELS[args.model]
 if args.model == 'gcn1':
-    args.readout = 'fully_connected'
     args.message = 'dtnn' # 'fully_connected'
     args.vertex_update = 'gru'
     args.embedding = 'fully_connected'
 elif args.model == 'gcn2':
-    args.readout = 'fully_connected'
     args.message = 'dtnn' # 'fully_connected'
     args.vertex_update = 'gru'
     args.embedding = 'fully_connected'
@@ -93,6 +92,10 @@ elif args.model == 'flat':
     args.message = None
     args.vertex_update = None
     args.embedding = None
+if args.imp:
+    args.readout = 'vertex'
+else:
+    args.readout = 'dtnn'
 
 def main():
 

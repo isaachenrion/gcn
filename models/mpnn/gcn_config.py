@@ -38,7 +38,7 @@ def get_gcn_config(args, dataset):
                 hidden_dim=args.hidden_dim,
                 readout_hidden_dim=10,
                 mode=dataset.problem_type,
-                target_names=dataset.target_names,
+                target_dim=dataset.target_dim,
             )
         ),
         embedding=FunctionAndConfig(

@@ -28,6 +28,10 @@ def regression_monitors(args, dataset):
                 target_names=dataset.target_names,
                 as_dict=True
             ),
+            #MSEGraphLoss(
+            #    target_names=dataset.target_names,
+            #    as_dict=True
+            #),
 
         ]
     )
