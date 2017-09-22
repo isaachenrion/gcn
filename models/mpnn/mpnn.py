@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from collections import namedtuple
-
+import numpy as np
 from .readout import make_readout
 from .message import make_message
 from .embedding import make_embedding
@@ -70,6 +70,12 @@ class BaseMPNN(nn.Module):
             G.node[u]['hidden'] = None
             G.node[u]['state'] = None
         return None
+
+    def number_of_parameters(self):
+        n = 0
+        for p in self.parameters():
+            n += np.prod([s for s in p.size()])
+        return n
 
 class VertexOnlyMPNN(BaseMPNN):
     def __init__(self, config):

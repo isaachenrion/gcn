@@ -26,6 +26,7 @@ import torch.nn.functional as F
 import sys
 import logging
 from capturing import Capturing
+from collections import OrderedDict
 
 
 EXP_DIR = "experiments"
@@ -64,12 +65,6 @@ def train(args):
     # load data
     training_set, validation_set = load_data(args)
 
-    #means = np.mean(np.mean(training_set.vertices_np, 0)[:, :-1], 1)
-    #variances = np.var(training_set.vertices_np[:, :, :4], axis=(0, 2))
-    #for mean in means:
-    #    print(mean)
-    #for variance in variances:
-    #    print(variance)
     logging.info('Loaded data: {} training examples, {} validation examples\n'.format(
         len(training_set), len(validation_set)))
 
@@ -88,6 +83,7 @@ def train(args):
         validation_set.cuda()
         model.cuda()
     logging.info(model)
+    logging.info('Number of trainable parameters: {}\n'.format(model.number_of_parameters()))
     logging.info('Training loss: {}\n'.format(experiment_config.loss_fn))
 
     # optimizer
@@ -133,134 +129,72 @@ def results_str(epoch, results, run_mode):
     return out_str
 
 def unwrap(variable_dict):
-    return {name: var.data.cpu().numpy().item() for name, var in variable_dict.items()}
+    od = OrderedDict()
+    for name, var in variable_dict.items():
+        od[name] = var.data.cpu().numpy().item()
+    return od
 
-def train_one_batch_serial(model, batch, loss_fn, optimizer, monitors):
-    batch_loss = Variable(torch.zeros(1))
-    if torch.cuda.is_available(): batch_loss = batch_loss.cuda()
-
-    batch_stats = {name: 0.0 for name in monitors.names}
+def train_one_batch(model, batch, loss_fn, optimizer, monitors):
+    # zero optimizer
     optimizer.zero_grad()
-    for i, G in enumerate(batch):
-        # reset hidden states
-        model.reset_hidden_states(G)
-        # forward model
-        model_output = model(G)
-        # get loss
-        loss = loss_fn(model_output, G)
-        batch_loss += loss
-        # get stats
-        stats = unwrap(monitors(model_output, G))
-        batch_stats = {name: (batch_stats[name] + stats[name]) for name in monitors.names}
-
-    batch_loss = batch_loss / len(batch)
-    batch_loss.backward()
-
-    #torch.nn.utils.clip_grad_norm(model.parameters(), .1)
-    optimizer.step()
-
-    batch_stats = {name: batch_stats[name] / len(batch) for name in monitors.names}
-    return batch_stats
-
-def train_one_batch_parallel(model, batch, loss_fn, optimizer, monitors):
-
-    optimizer.zero_grad()
-
+    # get batch
     x, y, dads = batch
-    #
-    #import ipdb; ipdb.set_trace()
-
     # forward model
     model_output = model(x, dads)
-
     # get loss
     batch_loss = loss_fn(model_output, y)
-
     # backward and optimize
-    batch_loss.backward()
-    optimizer.step()
-    #model.record(y)
-
+    batch_loss.backward(); optimizer.step()
     # get stats
     batch_stats = unwrap(monitors(model_output, y))
-
     return batch_stats
 
 def train_one_epoch(model, dataset, loss_fn, optimizer, monitors, debug):
     t0 = time.time()
-    epoch_stats = {name: 0.0 for name in monitors.names}
-
-    if dataset.order is None:
-        train_one_batch = train_one_batch_serial
-    else:
-        train_one_batch = train_one_batch_parallel
+    epoch_stats = OrderedDict()
+    for name in monitors.names:
+        epoch_stats[name] = 0.0
 
     model.train()
 
     #import ipdb; ipdb.set_trace()
     for i, batch in enumerate(dataset):
         batch_stats = train_one_batch(model, batch, loss_fn, optimizer, monitors)
-        epoch_stats = {name: (epoch_stats[name] + batch_stats[name]) for name in monitors.names}
+        for name in monitors.names:
+            epoch_stats[name] = (epoch_stats[name] + batch_stats[name])
 
-    epoch_stats = {name: stat / dataset.n_batches for name, stat in epoch_stats.items()}
+    for name, stat in epoch_stats.items():
+        epoch_stats[name] = stat / dataset.n_batches
+
     epoch_stats["time"] = time.time() - t0
 
     gc.collect()
     return epoch_stats
 
-def evaluate_one_batch_serial(model, batch, monitors):
-    batch_stats = {name: 0.0 for name in monitors.names}
-    for i, G in enumerate(batch):
-        # reset hidden states
-        model.reset_hidden_states(G)
-        # forward model
-        model_output = model(G)
-        # get stats
-        stats = unwrap(monitors(model_output, G))
-        batch_stats = {name: (batch_stats[name] + stats[name]) for name in monitors.names}
-
-    batch_stats = {name: batch_stats[name] / len(batch) for name in monitors.names}
-    return batch_stats
-
-def evaluate_one_batch_parallel(model, batch, monitors):
-
+def evaluate_one_batch(model, batch, monitors):
+    # get batch
     x, y, dads = batch
-
     # forward model
     model_output = model(x, dads)
-
-
     # get stats
     batch_stats = unwrap(monitors(model_output, y))
-
-    return batch_stats
-
-def _evaluate_one_batch_parallel(model, batch, monitors):
-
-    model.reset_hidden_states(batch)
-
-    # forward model
-    model_output = model(batch)
-
-    # get stats
-    batch_stats = unwrap(monitors(model_output, batch))
-
     return batch_stats
 
 def evaluate_one_epoch(model, dataset, loss_fn, monitors):
     t0 = time.time()
-    epoch_stats = {name: 0.0 for name in monitors.names}
+    epoch_stats = OrderedDict()
+    for name in monitors.names:
+        epoch_stats[name] = 0.
 
     model.eval()
 
     for i, batch in enumerate(dataset):
-        if dataset.order is None:
-            batch_stats = evaluate_one_batch_serial(model, batch, monitors)
-        else:
-            batch_stats = evaluate_one_batch_parallel(model, batch, monitors)
-        epoch_stats = {name: (epoch_stats[name] + batch_stats[name]) for name in monitors.names}
+        batch_stats = evaluate_one_batch(model, batch, monitors)
+        for name in monitors.names:
+            epoch_stats[name] = epoch_stats[name] + batch_stats[name]
 
-    epoch_stats = {name: stat / dataset.n_batches for name, stat in epoch_stats.items()}
+    for name, stat in epoch_stats.items():
+        epoch_stats[name] = stat / dataset.n_batches
     epoch_stats["time"] = time.time() - t0
 
     return epoch_stats

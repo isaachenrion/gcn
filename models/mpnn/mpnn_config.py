@@ -21,7 +21,7 @@ MPNNConfig = namedtuple(
             'readout',
             'embedding',
             'n_iters',
-            'parallelism',
+            'ndim',
             'mp_prob',
         ]
 )
@@ -45,7 +45,8 @@ VertexUpdateConfig = namedtuple(
 EmbeddingConfig = namedtuple(
         'EmbeddingConfig', [
             'data_dim',
-            'state_dim'
+            'state_dim',
+            'ndim'
         ]
 )
 
@@ -84,11 +85,12 @@ def get_mpnn_config(args, dataset):
             function=args.embedding,
             config=EmbeddingConfig(
                 data_dim=dataset.vertex_dim,
-                state_dim=args.vertex_state_dim
+                state_dim=args.vertex_state_dim,
+                ndim=dataset.ndim,
             )
         ),
         n_iters=args.n_iters,
-        parallelism=args.parallelism,
+        ndim=dataset.ndim,
         mp_prob=args.mp_prob
     )
     return config

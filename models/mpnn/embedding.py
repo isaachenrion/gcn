@@ -14,14 +14,24 @@ class Embedding(nn.Module):
 class FullyConnectedEmbedding(Embedding):
     def __init__(self, *args):
         super().__init__(*args)
+        if self.config.ndim == 2:
+            bn = nn.BatchNorm1d
+        elif self.config.ndim == 3:
+            bn = nn.BatchNorm2d
         self.net = nn.Sequential(
+            nn.BatchNorm1d(self.data_dim),
             nn.Linear(self.data_dim, self.state_dim),
             nn.ReLU(),
+            nn.BatchNorm1d(self.state_dim),
             nn.Linear(self.state_dim, self.state_dim)
         )
 
     def forward(self, x):
-        return self.net(x)
+        bs, gd, dd = (s for s in x.size())
+        x = x.view(-1, dd)
+        x = self.net(x)
+        x = x.view(bs, gd, -1)
+        return x
 
 class Constant(Embedding):
     def __init__(self, *args):

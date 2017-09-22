@@ -8,7 +8,7 @@ GCNConfig = namedtuple(
             'readout',
             'embedding',
             'n_iters',
-            'parallelism',
+            'ndim',
             'mp_prob',
         ]
 )
@@ -45,11 +45,12 @@ def get_gcn_config(args, dataset):
             function=args.embedding,
             config=EmbeddingConfig(
                 data_dim=dataset.vertex_dim,
-                state_dim=args.hidden_dim
+                state_dim=args.hidden_dim,
+                ndim=dataset.ndim,
             )
         ),
         n_iters=args.n_iters,
-        parallelism=args.parallelism,
+        ndim=dataset.ndim,
         mp_prob=args.mp_prob
     )
     return config

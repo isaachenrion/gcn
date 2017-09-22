@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-
+import numpy as np
 
 class Flat(nn.Module):
     def __init__(self, config):
@@ -48,6 +48,11 @@ class Flat(nn.Module):
         self.target_mean = self.alpha * self.target_mean + (1 - self.alpha) * mean
         self.target_var = self.alpha * self.target_var + (1 - self.alpha) * var
 
+    def number_of_parameters(self):
+        n = 0
+        for p in self.parameters():
+            n += np.prod([s for s in p.size()])
+        return n
 
 
 def make_flat(config):

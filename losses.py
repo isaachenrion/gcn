@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-
+from collections import OrderedDict
 class Loss(nn.Module):
     def __init__(self, name):
         super().__init__()
@@ -18,13 +18,13 @@ class GraphLoss(Loss):
         self.as_dict = as_dict
 
     def forward(self, model_output, targets):
-        loss_dict = {}
 
         #import ipdb; ipdb.set_trace()
         per_target_loss = self.loss_fn(model_output, targets)
         if len(per_target_loss.size()) == 2:
             per_target_loss = per_target_loss.sum(1)
 
+        loss_dict = OrderedDict()
         if self.target_names is not None:
             for i, target in enumerate(self.target_names):
                 loss_dict[target.name + ' ' + self.name] = per_target_loss[i]

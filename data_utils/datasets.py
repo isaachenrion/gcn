@@ -21,6 +21,7 @@ class GraphDataset(Dataset):
         self.problem_type = problem_type
         self.target_names = target_names
         self.batch_size = None
+        self.ndim = len(self.vertices_np.shape)
 
         if edges is not None:
             self.dads_np = build_dads(edges)

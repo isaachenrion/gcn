@@ -22,6 +22,9 @@ class Readout(nn.Module):
         self.classify = (self.config.mode == 'clf')
         self.hidden_dim = config.hidden_dim
         self.target_dim = config.target_dim
+        self.readout_hidden_dim = config.readout_hidden_dim
+        self.activation = nn.LeakyReLU
+
 
     def forward(self, G):
         pass
@@ -30,27 +33,29 @@ class Readout(nn.Module):
 class DTNNReadout(Readout):
     def __init__(self, config):
         super().__init__(config)
-        self.readout_hidden_dim = config.readout_hidden_dim
-        self.activation = nn.LeakyReLU
         net = nn.Sequential(
                 nn.Linear(self.hidden_dim, self.readout_hidden_dim),
                 self.activation(),
+                nn.BatchNorm1d(self.readout_hidden_dim),
                 nn.Linear(self.readout_hidden_dim, self.target_dim),
                 )
         self.net = net
 
     def forward(self, h):
-        x = self.net(h).sum(1)
+        bs, gd, dd = (s for s in h.size())
+        x = h.view(-1, dd)
+        x = self.net(x)
+        x = x.view(bs, gd, -1)
+        x = x.sum(1)
         return x
 
 class FullyConnectedReadout(Readout):
     def __init__(self, config):
         super().__init__(config)
-        self.readout_hidden_dim = config.readout_hidden_dim
-        self.activation = nn.LeakyReLU
         net = nn.Sequential(
                 nn.Linear(self.hidden_dim, self.readout_hidden_dim),
                 self.activation(),
+                nn.BatchNorm1d(self.readout_hidden_dim),
                 nn.Linear(self.readout_hidden_dim, self.target_dim),
                 )
         self.net = net
@@ -87,10 +92,20 @@ class VCNReadout(Readout):
 class VertexReadout(Readout):
     def __init__(self, config):
         super().__init__(config)
-        self.net = nn.Linear(self.hidden_dim, self.target_dim)
+        net = nn.Sequential(
+                nn.Linear(self.hidden_dim, self.readout_hidden_dim),
+                self.activation(),
+                nn.BatchNorm2d(self.readout_hidden_dim),
+                nn.Linear(self.readout_hidden_dim, self.target_dim),
+                )
+        self.net = net
 
     def forward(self, h):
-        return self.net(h)
+        bs, gd, dd = (s for s in h.size())
+        x = h.view(-1, dd)
+        x = self.net(x)
+        x = x.view(bs, gd, -1)
+        return x
 
 
 def make_readout(readout_config):
